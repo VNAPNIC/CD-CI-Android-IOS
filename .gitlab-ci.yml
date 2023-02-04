@@ -1,0 +1,59 @@
+image: ubuntu:20.04
+
+variables:
+  ANDROID_HOME: /usr/local/android-sdk
+  JAVA_HOME: /usr/lib/jvm/java-8-openjdk-amd64
+
+stages:
+  - build
+  - test
+  - deploy
+
+before_script:
+  - apt-get update && apt-get install -y openjdk-8-jdk curl unzip
+  - curl -L https://dl.google.com/android/repository/sdk-tools-linux-4333796.zip -o android-sdk.zip
+  - unzip android-sdk.zip -d $ANDROID_HOME
+  - rm android-sdk.zip
+  - apt-get update && apt-get install -y xcode-select
+
+build_android:
+  stage: build
+  script:
+    - ./gradlew build
+  only:
+    - branches
+
+test_android:
+  stage: test
+  script:
+    - ./gradlew test
+  only:
+    - branches
+
+build_ios:
+  stage: build
+  script:
+    - xcodebuild
+  only:
+    - branches
+
+test_ios:
+  stage: test
+  script:
+    - xcodebuild test
+  only:
+    - branches
+
+deploy_ios:
+  stage: deploy
+  script:
+    - fastlane deploy_ios_to_testflight
+  only:
+    - branches
+
+deploy_android:
+  stage: deploy
+  script:
+    - ./gradlew firebase_deploy
+  only:
+    - branches
